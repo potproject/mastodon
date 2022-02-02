@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class PreviewCardFilter
+class Trends::StatusFilter
   KEYS = %i(
     trending
   ).freeze
@@ -12,7 +12,7 @@ class PreviewCardFilter
   end
 
   def results
-    scope = PreviewCard.unscoped
+    scope = Status.unscoped.kept
 
     params.each do |key, value|
       next if key.to_s == 'page'
@@ -38,16 +38,16 @@ class PreviewCardFilter
     ids = begin
       case value.to_s
       when 'allowed'
-        Trends.links.currently_trending_ids(true, -1)
+        Trends.statuses.currently_trending_ids(true, -1)
       else
-        Trends.links.currently_trending_ids(false, -1)
+        Trends.statuses.currently_trending_ids(false, -1)
       end
     end
 
     if ids.empty?
-      PreviewCard.none
+      Status.none
     else
-      PreviewCard.joins("join unnest(array[#{ids.map(&:to_i).join(',')}]::integer[]) with ordinality as x (id, ordering) on preview_cards.id = x.id").order('x.ordering')
+      Status.unscoped.joins("join unnest(array[#{ids.map(&:to_i).join(',')}]::bigint[]) with ordinality as x (id, ordering) on statuses.id = x.id").order('x.ordering')
     end
   end
 end
